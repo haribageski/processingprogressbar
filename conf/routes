@@ -1,0 +1,11 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# ~~~~
+
+GET     /                           controllers.ImageProcessingController.homePage()
+POST    /processImage/:id           controllers.ImageProcessingController.processImage(id)
+POST    /resetProcessingStatus/:id  controllers.ProcessingProgressController.resetProcessingStatus(id)
+GET     /progressStatuses/:id       controllers.ProcessingProgressController.getProgressStatuses(id)
+
+# Map static resources from the /public folder to the /assets URL path
+GET     /public-assets/*file        controllers.Assets.at(path="/public/assets", file)
