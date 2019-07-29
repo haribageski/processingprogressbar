@@ -10,8 +10,6 @@ object ProcessingStatus {
 
     val values = findValues
 
-    case object NotStarted extends Status
-
     case object Preparing extends Status
 
     case object Parsing extends Status

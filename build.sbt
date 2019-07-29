@@ -1,6 +1,6 @@
 name := "progress-bar"
 
-organization := "lilinio.com"
+organization := "text-scan.com"
 
 version := "0.0.1"
 
@@ -12,9 +12,7 @@ val root = (project in file("."))
 dependencyOverrides += "org.scala-lang" % "scala-compiler" % scalaVersion.value
 
 libraryDependencies ++= Seq(
-  "com.beachape" %% "enumeratum" % "1.5.13",
-  "com.h2database" % "h2" % "1.4.192",
-  "com.typesafe.slick" %% "slick" % "3.3.2"
+  "com.beachape" %% "enumeratum" % "1.5.13"
 )
 
 scalacOptions in ThisBuild ++= Seq(

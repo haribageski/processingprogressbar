@@ -37,9 +37,7 @@
                                  role="progressbar"
                                  aria-valuemin="0"
                                  aria-valuemax="100"
-                                 style="width: 0%">
-                                0%
-                            </div>
+                                 style="width: 0%">0%</div>
                         </div>
                     </div>
                 </div>
@@ -55,27 +53,31 @@
 
             @helper.javascriptRouter("jsRoutes")(
                 routes.javascript.ImageProcessingController.processImage,
-                routes.javascript.ProcessingProgressController.resetProcessingStatus,
             )
             <script>
                 document.getElementById("start-processing-img").addEventListener("click", function(event){
-                    if (document.getElementById("file-upload").files.length > 0) {
-                        var token =  "@play.filters.csrf.CSRF.getToken.get.value"
-                        $.ajaxSetup({
-                            beforeSend: function(xhr) {
-                                xhr.setRequestHeader('Csrf-Token', token);
-                            }
-                        });
-                        sessionUUID = "@java.util.UUID.randomUUID().toString()"
-                        var progressBarDescriptionElem = document.getElementById("processing-progress-description");
-                        var progressBarElem = document.getElementById("processing-progress-bar");
+                    var token =  "@play.filters.csrf.CSRF.getToken.get.value"
+                    $.ajaxSetup({
+                        beforeSend: function(xhr) {
+                            xhr.setRequestHeader('Csrf-Token', token);
+                        }
+                    });
 
-                        var worker = new Worker("@routes.Assets.at("get-processing-statuses.js")");
+                    // make sure a file is selected
+                    if (document.getElementById("file-upload").files.length > 0) {
+                        //don't submit the form through Twirl Form, we will submit it manually
+                        event.preventDefault();
+
+                        // disabled the submit button
+                        $('#start-processing-img').attr("disabled", true);
+
+                        sessionUUID = "@java.util.UUID.randomUUID().toString()"
+                        progressBarDescriptionElem = document.getElementById("processing-progress-description");
+                        progressBarElem = document.getElementById("processing-progress-bar")
+
+                        worker = new Worker("@routes.Assets.at("get-processing-statuses.js")");
                         worker.onmessage = function(msg) {
                             switch(msg.data) {
-                                case 'NotStarted':
-                                    updateProgressBar(0, 'uploading...', progressBarElem, progressBarDescriptionElem);
-                                    break;
                                 case 'Preparing':
                                     updateProgressBar(9, 'preprocessing...', progressBarElem, progressBarDescriptionElem);
                                     break;
@@ -92,40 +94,19 @@
                             }
                         }
 
-                        var route = jsRoutes.controllers.ProcessingProgressController.resetProcessingStatus(sessionUUID);
-                        $.ajax({
-                            url: route.url,
-                            type: route.type,
-                            processData: false,
-                            contentType: false,
-                            cache: false,
-                            timeout: 600000,
-                            success: function (data) {
-                                document.getElementById("processing-progress-block").style.display = "block";
-                                // initiates an event source of processing progress statuses
-                                worker.postMessage(sessionUUID);
-                            },
-                            error: function (e) {
-                                $("#result").text(e.responseText);
-                                console.log("ERROR : ", e);
-                            }
-                        });
+                        updateProgressBar(0, 'uploading...', progressBarElem, progressBarDescriptionElem);
+                        document.getElementById("processing-progress-block").style.display = "block";
 
-                        //don't submit the form through Twirl Form, we will submit it manually
-                        event.preventDefault();
+                        // initiates an event source of processing progress statuses
+                        worker.postMessage(sessionUUID);
 
+                        routeForProcessingImg = jsRoutes.controllers.ImageProcessingController.processImage(sessionUUID);
                         // get form
-                        var form = $('#fileUploadForm')[0];
-
-                        var data = new FormData(form);
-
-                        // disabled the submit button
-                        $("#btnSubmit").prop("disabled", true);
-
-                        var route = jsRoutes.controllers.ImageProcessingController.processImage(sessionUUID);
+                        form = $('#fileUploadForm')[0];
+                        data = new FormData(form);
                         $.ajax({
-                            url: route.url,
-                            type: route.type,
+                            url: routeForProcessingImg.url,
+                            type: routeForProcessingImg.type,
                             enctype: 'multipart/form-data',
                             data: data,
                             processData: false,
@@ -133,11 +114,16 @@
                             cache: false,
                             timeout: 600000,
                             success: function (data) {
+                                // enabled the submit button
+                                $('#start-processing-img').attr("disabled", false);
                                 console.log("Processing completed");
+
                             },
                             error: function (e) {
                                 worker.postMessage("END");
                                 document.getElementById("processing-progress-block").style.display = "none";
+                                // enabled the submit button
+                                $('#start-processing-img').attr("disabled", false);
                                 console.log("ERROR : ", e);
                             }
                         });
